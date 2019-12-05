@@ -4,6 +4,7 @@ The data file contains a patient number followed by genomic, survival, and radio
 The framework of the dataset looks like this:
 
 ![dataset_outlook](dataset_outlook.png)
+
 i) Genomic variables: SMAD4 (0 = false, 1 = true), TP53 (0 = loss of function, 1 = gain of function), and > 4 genes altered (0 = false, 1 = true).
 
 ii) Survival variables: OS_months (number of months since last follow-up or death) and OS_status (0 = alive, 1 = dead).
