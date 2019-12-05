@@ -3,7 +3,7 @@ The purpose of this project is to use supervised methods with radiomic, genomic,
 The data file contains a patient number followed by genomic, survival, and radiomic data as follows:
 The framework of the dataset looks like this:
 
-![dataset_outlook](dataset_outlook.png)
+![alt text](https://github.com/ChristineWeitw/Biomedical-datamining/blob/master/radiogenomic%20analyses/dataset_outlook.png)
 
 i) Genomic variables: SMAD4 (0 = false, 1 = true), TP53 (0 = loss of function, 1 = gain of function), and > 4 genes altered (0 = false, 1 = true).
 
