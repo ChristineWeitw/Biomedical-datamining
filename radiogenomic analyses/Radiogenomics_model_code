@@ -1,0 +1,184 @@
+install.packages("caret")
+install.packages("caret", dependencies=c("Depends", "Suggests"))
+install.packages("e1071")
+install.packages("RSNNS")
+install.packages("neuralnet")
+install.packages("pROC")
+install.packages("xfun")
+install.packages("highr")
+install.packages("htmlTable")
+library(pROC)
+library(e1071)
+library(caret)
+library(neuralnet)
+library(xfun)
+library(highr)
+library(htmlTable)
+
+
+###TASK1###
+filename<-"/Users/christinewei/Downloads/803-imaging/BMIF_803_Assignment_5_data.csv"
+data<-read.csv(filename,header = TRUE)
+
+validation_index <- createDataPartition(data$genes_altered_gt_4, p=0.8, list=FALSE)
+# select 20% of the data for validation
+validation <- data[-validation_index,]
+# use the remaining 80% of data to training and testing the models
+dataset <- data[validation_index,]
+
+
+# Run algorithms using 10-fold cross validation
+control <- trainControl(method="cv", number=10)
+metric <- "Accuracy"
+train_data<-dataset[,-c(1,3)]
+target_col<-dataset[ ,3]
+target_col= as.factor(dataset$genes_altered_gt_4)
+test_data<-validation[ ,-c(1,3)]
+test_target<-validation[ ,3]
+test_target=as.factor(validation$genes_altered_gt_4)
+
+# a) linear algorithms
+set.seed(7)
+fit.lda <- train(train_data,target_col,method="lda", metric=metric, trControl=control)
+# b) nonlinear algorithms
+# CART
+set.seed(7)
+fit.cart <- train(train_data,target_col, method="rpart", metric=metric, trControl=control)
+# kNN
+set.seed(7)
+fit.knn <- train(train_data,target_col, method="knn", metric=metric, trControl=control)
+# c) advanced algorithms
+# SVM
+set.seed(7)
+fit.svm <- train(train_data,target_col, method="svmRadial", metric=metric, trControl=control)
+# Random Forest
+set.seed(7)
+fit.rf <- train(train_data,target_col, method="rf", metric=metric, trControl=control)
+# neural network
+set.seed(7)
+fit.nn<-train(train_data,target_col,method='nnet',metric=metric, trControl=control)
+
+
+results<- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf, nn=fit.nn))
+summary(results)
+
+
+# choose the best model to plot ROC
+predictions <- predict(fit.rf, test_data)
+
+confusionMatrix(predictions, test_target)
+
+predictions <- as.numeric(predictions)
+
+
+
+
+pROC_obj <- roc(test_target,predictions,
+                smoothed = TRUE,
+                # arguments for ci
+                ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                # arguments for plot
+                plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                print.auc=TRUE, show.thres=TRUE)
+dev.off()
+plot(pROC_obj)
+
+
+###TASK2###
+##normalize the data & randomize the genes variables
+filename<-"/Users/christinewei/Downloads/803-imaging/BMIF_803_Assignment_5_data.csv"
+data<-read.csv(filename,header = TRUE)
+
+samplesize = 0.80 * nrow(data)
+set.seed(80)
+index = sample( seq_len ( nrow ( data ) ), size = samplesize )
+
+# Create training and test set
+datatrain = data[ index, ]
+datatest = data[ -index, ]
+
+max = apply(data , 2 , max)
+min = apply(data, 2 , min)
+scaled = as.data.frame(scale(data, center = min, scale = max - min))
+
+# Run algorithms using 10-fold cross validation
+control <- trainControl(method="cv", number=10)
+metric <- "Accuracy"
+train_data<-scaled[index,-c(1,3)]
+target_col<-scaled[index ,3]
+target_col= as.factor(datatrain$SMAD4)
+test_data<-scaled[-index ,-c(1,3)]
+test_target<-scaled[-index ,3]
+test_target=as.factor(datatest$SMAD4)
+
+# a) linear algorithms
+set.seed(7)
+fit.lda <- train(train_data,target_col,method="lda", metric=metric, trControl=control)
+# b) nonlinear algorithms
+# CART
+set.seed(7)
+fit.cart <- train(train_data,target_col, method="rpart", metric=metric, trControl=control)
+# kNN
+set.seed(7)
+fit.knn <- train(train_data,target_col, method="knn", metric=metric, trControl=control)
+# c) advanced algorithms
+# SVM
+set.seed(7)
+fit.svm <- train(train_data,target_col, method="svmRadial", metric=metric, trControl=control)
+# Random Forest
+set.seed(7)
+fit.rf <- train(train_data,target_col, method="rf", metric=metric, trControl=control)
+# neural network
+set.seed(7)
+fit.nn<-train(train_data,target_col,method='nnet',metric=metric, trControl=control)
+
+
+results<- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf, nn=fit.nn))
+summary(results)
+predictions <- predict(fit.rf, test_data)
+
+confusionMatrix(predictions, test_target)
+
+predictions <- as.numeric(predictions)
+
+pROC_obj <- roc(test_target,predictions,
+                smoothed = TRUE,
+                # arguments for ci
+                ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                # arguments for plot
+                plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                print.auc=TRUE, show.thres=TRUE)
+dev.off()
+plot(pROC_obj)
+
+###TASL3###
+##survival analysis
+install.packages("car",dependencies = TRUE)
+install.packages("survival",dependencies = TRUE)
+install.packages("flexsurv",dependencies = TRUE)
+install.packages("KMsurv",dependencies = TRUE)
+install.packages("e1071",dependencies = TRUE)
+install.packages("rms",dependencies = TRUE)
+install.packages("survminer")
+install.packages("Greg")
+cor(data)
+
+
+library(survival)
+library(survminer)
+library(dplyr)
+library(magrittr)
+recsurv<-Surv(data$OS_months,data$OS_status..death.1..alive.0.)
+fit_KH<-survfit(recsurv~1,type="kaplan-meier",conf.type="log-log")
+plot(fit_KH, main="Pancreatic Cancer",xlab = "Survival Time in Month",ylab ="probability")
+
+regular_model <- coxph(Surv(data$OS_months,data$OS_status..death.1..alive.0.) ~ SMAD4+TP53+genes_altered_gt_4+GLCM15+GLCM16+RLM2+IH3+IH4+LBP10+LBP11+LBP13+LBP16+LBP29+LBP30+LBP37+LBP42+LBP43+LBP49+LBP52+LBP53+LBP54+LBP87+LBP88+LBP89+LBP90+LBP91+LBP98+LBP102+LBP103+LBP105+FD1_11+FD1_29+FD1_30+FD1_41+FD1_44+ACM1_1+ACM1_2+ACM1_3, data=data,x=TRUE,y=TRUE)
+summary(regular_model)
+update(regular_model, .~.-MAD4+TP53+genes_altered_gt_4+GLCM15:ACM1_3)
+ 
+
+
+
+
+
+
